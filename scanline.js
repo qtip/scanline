@@ -229,7 +229,11 @@ Vertex.prototype.interpolated = function(goal, ratio) {
     return vertex;
 
 };
-;
+
+Vertex.prototype.reflected = function(normal){
+    return normal.multScalar(2*this.dot(normal)).sub(this).normalized();
+}
+
 //============ Polygon class ==============
 
 function Polygon(vertices, lowerBoundY, upperBoundY){
