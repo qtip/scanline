@@ -386,7 +386,20 @@ function getTextureCubePixel(vector, posx, negx, posy, negy, posz, negz){
     
 };
 
-
+function colorMix(c1, c2, factor){
+    var color = {};
+    color.r = c1.r * factor + c2.r * (1-factor);
+    color.g = c1.g * factor + c2.g * (1-factor);
+    color.b = c1.b * factor + c2.b * (1-factor);
+    return color;
+}
+function colorAdd(c1, c2, factor){
+    var color = {};
+    color.r = c1.r + c2.r * factor;
+    color.g = c1.g + c2.g * factor;
+    color.b = c1.b + c2.b * factor;
+    return color;
+}
 //============ Surface class ==============
 
 function Surface(canvas) {
