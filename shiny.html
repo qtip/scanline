@@ -1,0 +1,65 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <title>Scanline example</title>
+    <script type="text/javascript" src="scanline.js"></script>
+    <style type="text/css">
+        body{
+            background-color: #ccc;
+            font-family: sans-serif;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Texture mapped shiny rings</h1>
+    <p id='loading-msg'>Rendering...</p>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <script type="text/javascript">
+        function vertexShader(vertex, uniform){
+            var normal = uniform.modelview.mult(new Vertex(vertex.data.nx, vertex.data.ny, vertex.data.nz, 1)).sub(uniform.modelview.mult(new Vertex(0,0,0,1)));
+            vertex.data.nx = normal.x;
+            vertex.data.ny = normal.y;
+            vertex.data.nz = normal.z;
+            vertex = uniform.projection.mult(uniform.modelview).mult(vertex);
+            var view = new Vertex(0,0,-1,1);
+            var reflection = view.reflected(normal);
+            vertex.data.rx = reflection.x;
+            vertex.data.ry = reflection.y;
+            vertex.data.rz = reflection.z;
+            return vertex;
+        };
+        function fragmentShader(frag, uniform){
+            var normal = new Vertex(frag.data.nx, frag.data.ny, frag.data.nz, 1);
+            var reflection = new Vertex(frag.data.rx, frag.data.ry, frag.data.rz, 1);
+            var texColor = uniform.texTestGrid.getPixel(frag.data.u*10, frag.data.v);
+            var shineIntensity = Math.pow(Math.max(0, reflection.dot(new Vertex(0,1,0,1))), 4);
+            var shineIntensity2 = Math.pow(Math.max(0, reflection.dot(new Vertex(0,.2,1,1))), 10);
+            var shineColor = {r: shineIntensity*255, g: shineIntensity*255, b: shineIntensity*255};
+            var shineColor2 = {r: shineIntensity2*255, g: shineIntensity2*255, b: shineIntensity2*255};
+            var color = colorAdd(texColor, shineColor, 1);
+            var color = colorAdd(color, shineColor2, .8);
+            color.r = Math.max(0, Math.min(color.r, 255));
+            color.g = Math.max(0, Math.min(color.g, 255));
+            color.b = Math.max(0, Math.min(color.b, 255));
+            return color;
+        };
+        loadMultipleTextures(['testgrid.png'], function(textures){
+            var canvas = document.getElementById('canvas');
+            var surface = new Surface(canvas);
+            var uniform = {
+                projection: perspectiveMatrix(Math.PI/4, surface.width/surface.height, .2, 25),
+                modelview: translationMatrix(1,0,10).mult(rotationMatrix(Math.PI/4, 0,1,0)).mult(rotationMatrix(Math.PI/4, 0,0,1)),
+                sun: new Vertex(0,0,-1,1).normalized(),
+                texTestGrid: textures[0]
+            };
+            drawTorus(surface, 2.5, .3,30,30, uniform, vertexShader, fragmentShader);
+            uniform.modelview = translationMatrix(1,0,10).mult(rotationMatrix(Math.PI/4, 0,1,0)).mult(rotationMatrix(Math.PI/4, 0,0,-1)).mult(scaleMatrix(.9,.9,.9));
+            drawTorus(surface, 2.5, .3,30,30, uniform, vertexShader, fragmentShader);
+            surface.show();
+            var loadingMsg = document.getElementById('loading-msg');
+            loadingMsg.parentNode.removeChild(loadingMsg);
+        });
+    </script>
+  </body>
+</html>
