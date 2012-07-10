@@ -457,3 +457,34 @@ Surface.prototype.drawPolygon = function(vertices, uniform, vertexShader, fragme
         this.drawScanline(polygon.scanlines[y].left, polygon.scanlines[y].right, uniform, fragmentShader);
     }
 };
+
+function drawTorus(surface, ringRadius, tubeRadius, ringVertCount, tubeVertCount, uniform, vertexShader, fragmentShader){
+    function makeVertex(ringRatio, tubeRatio){
+        var vertex = new Vertex(tubeRadius,0,0,1);
+        var normal = new Vertex(1,0,0,1);
+        vertex = rotationMatrix(2*Math.PI*tubeRatio,0,0,1).mult(vertex);
+        vertex = translationMatrix(ringRadius,0,0).mult(vertex);
+        vertex = rotationMatrix(2*Math.PI*ringRatio,0,1,0).mult(vertex);
+        normal = rotationMatrix(2*Math.PI*tubeRatio,0,0,1).mult(normal);
+        normal = rotationMatrix(2*Math.PI*ringRatio,0,1,0).mult(normal);
+        vertex.data.nx = normal.x;
+        vertex.data.ny = normal.y;
+        vertex.data.nz = normal.z;
+        vertex.data.u = ringRatio;
+        vertex.data.v = tubeRatio;
+        return vertex;
+    }
+    var r;
+    for (r = 0; r < ringVertCount; r++){
+        var t;
+        for(t = 0; t < tubeVertCount; t++){
+            surface.drawPolygon([
+                makeVertex(r/ringVertCount, t/tubeVertCount),
+                makeVertex((r+1)/ringVertCount, t/tubeVertCount),
+                makeVertex((r+1)/ringVertCount, (t+1)/tubeVertCount),
+                makeVertex(r/ringVertCount, (t+1)/tubeVertCount),
+                ], uniform, vertexShader, fragmentShader);
+        }
+    }
+}
+
