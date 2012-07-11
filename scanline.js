@@ -325,8 +325,8 @@ function Texture(src, onload) {
 }
 
 Texture.prototype.getPixel = function(x,y){
-    x *= this.width;
-    y *= this.height;
+    x = x % 1 * this.width;
+    y = y % 1 * this.height;
     var index = (Math.floor(x) + Math.floor(y) * this.width) * 4;
     var color = {};
     color.r =  this.pixels[index];
