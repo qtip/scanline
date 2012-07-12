@@ -1,0 +1,115 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <title>Scanline example</title>
+    <script type="text/javascript" src="scanline.js"></script>
+    <style type="text/css">
+        body{
+            background-color: #ccc;
+            font-family: sans-serif;
+        }
+        p {
+            line-height: 0;
+        }
+        div {
+            font-weight:bold;
+            display:inline-block;
+            width:6px;
+            height:6px;
+            font-size:10px;
+            margin:0;
+            padding:0;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Texture mapped shiny rings rendered to pure HTML</h1>
+    <p id='loading-msg'>Rendering...</p>
+    <canvas id="canvas" width="1" height="1"></canvas>
+    <script type="text/javascript">
+        function AsciiSurface(width,height){
+            this.buffer = [];
+            this.zBuffer = [];
+            this.width = width;
+            this.height = height;
+        }
+        AsciiSurface.prototype = new Surface(document.getElementById('canvas'));
+        AsciiSurface.prototype.drawPixel = function(x,y,r,g,b){
+            if (this.buffer[y] == undefined){
+                this.buffer[y] = [];
+            }
+            this.buffer[y][x] = {r:r,g:g,b:b};
+        }
+
+        AsciiSurface.prototype.toString = function(){
+            var out = [];
+            for (y = 0; y < this.buffer.length; y++){
+                var line = [];
+                if (this.buffer[y] !== undefined){
+                    for (x = 0; x < this.buffer[y].length; x++){
+                        if (this.buffer[y][x] !== undefined){
+                            var r = this.buffer[y][x].r;
+                            var g = this.buffer[y][x].g;
+                            var b = this.buffer[y][x].b;
+                            r = Math.floor(r);
+                            g = Math.floor(g);
+                            b = Math.floor(b);
+                            line.push("<div style='color:rgb("+r+", "+g+", "+b+")'>M</div>");
+                        } else {
+                            line.push("<div>&nbsp;</div>");
+                        }
+                    }
+                } else {
+                    out.push("<div>&nbsp;</div>");
+                }
+                out.push(line.join(''));
+            }
+            return out.join('<br/>');
+        }
+        function vertexShader(vertex, uniform){
+            var normal = uniform.modelview.mult(new Vertex(vertex.data.nx, vertex.data.ny, vertex.data.nz, 1)).sub(uniform.modelview.mult(new Vertex(0,0,0,1)));
+            vertex.data.nx = normal.x;
+            vertex.data.ny = normal.y;
+            vertex.data.nz = normal.z;
+            vertex = uniform.projection.mult(uniform.modelview).mult(vertex);
+            var view = new Vertex(0,0,-1,1);
+            var reflection = view.reflected(normal);
+            vertex.data.rx = reflection.x;
+            vertex.data.ry = reflection.y;
+            vertex.data.rz = reflection.z;
+            return vertex;
+        };
+        function fragmentShader(frag, uniform){
+            var normal = new Vertex(frag.data.nx, frag.data.ny, frag.data.nz, 1);
+            var reflection = new Vertex(frag.data.rx, frag.data.ry, frag.data.rz, 1);
+            var texColor = uniform.texTestGrid.getPixel(frag.data.u*10, frag.data.v);
+            var shineIntensity = Math.pow(Math.max(0, reflection.dot(new Vertex(0,1,0,1))), 4);
+            var shineIntensity2 = Math.pow(Math.max(0, reflection.dot(new Vertex(0,.2,1,1))), 10);
+            var shineColor = {r: shineIntensity*255, g: shineIntensity*255, b: shineIntensity*255};
+            var shineColor2 = {r: shineIntensity2*255, g: shineIntensity2*255, b: shineIntensity2*255};
+            var color = colorAdd(texColor, shineColor, 1);
+            var color = colorAdd(color, shineColor2, .8);
+            color.r = Math.max(0, Math.min(color.r, 255));
+            color.g = Math.max(0, Math.min(color.g, 255));
+            color.b = Math.max(0, Math.min(color.b, 255));
+            return color;
+        };
+        loadMultipleTextures(['testgrid.png'], function(textures){
+            var canvas = document.getElementById('canvas');
+            var surface = new AsciiSurface(135,135);
+            var uniform = {
+                projection: perspectiveMatrix(Math.PI/4, surface.width/surface.height, .2, 25),
+                modelview: translationMatrix(1,0,10).mult(rotationMatrix(Math.PI/4, 0,1,0)).mult(rotationMatrix(Math.PI/4, 0,0,1)),
+                sun: new Vertex(0,0,-1,1).normalized(),
+                texTestGrid: textures[0]
+            };
+            drawTorus(surface, 2.5, .3,30,30, uniform, vertexShader, fragmentShader);
+            uniform.modelview = translationMatrix(1,0,10).mult(rotationMatrix(Math.PI/4, 0,1,0)).mult(rotationMatrix(Math.PI/4, 0,0,-1)).mult(scaleMatrix(.9,.9,.9));
+            drawTorus(surface, 2.5, .3,30,30, uniform, vertexShader, fragmentShader);
+            var loadingMsg = document.getElementById('loading-msg');
+            loadingMsg.innerHTML = surface.toString();
+        });
+    </script>
+  </body>
+</html>
