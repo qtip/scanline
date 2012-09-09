@@ -12,3 +12,5 @@ Demo
 ### [Shiny rings rendered to HTML](http://qtip.github.com/scanline/text.html):  
 ![Shiny rings rendered to HTML](http://qtip.github.com/scanline/text.png)
 
+### [Rendering a model](http://qtip.github.com/scanline/screwdriver.html):  
+![Rendering a model](http://qtip.github.com/scanline/screwdriver-rendered.png)
