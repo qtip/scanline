@@ -1,0 +1,42 @@
+<!DOCTYPE HTML>
+<html lang="en-US">
+  <head>
+    <meta charset="UTF-8">
+    <title>Scanline example</title>
+    <script type="text/javascript" src="scanline.js"></script>
+    <style type="text/css">
+        body{
+            background-color: #ccc;
+            font-family: sans-serif;
+        }
+    </style>
+  </head>
+  <body>
+    <h1>Model</h1>
+    <p id='loading-msg'>Rendering...</p>
+    <canvas id="canvas" width="800" height="800"></canvas>
+    <script type="text/javascript" src="screwdriver-data.js"></script>
+    <script type="text/javascript">
+        function vertexShader(vertex, uniform){
+            vertex = uniform.projection.mult(uniform.modelview).mult(vertex);
+            return vertex;
+        };
+        function fragmentShader(frag, uniform){
+            return uniform.texAO.getPixel(frag.data.u, 1.0-frag.data.v);
+        };
+        loadMultipleTextures(['screwdriver.png'], function(textures){
+            var canvas = document.getElementById('canvas');
+            var surface = new Surface(canvas);
+            var uniform = {
+                projection: perspectiveMatrix(Math.PI/4, surface.width/surface.height, .2, 25),
+                modelview: translationMatrix(0,0,10).mult(rotationMatrix(Math.PI/6, 0,1,0)).mult(rotationMatrix(-Math.PI/4, 1,0,0)),
+                texAO: textures[0]
+            };
+            drawScrewdriver(surface, uniform, vertexShader, fragmentShader);
+            surface.show();
+            var loadingMsg = document.getElementById('loading-msg');
+            loadingMsg.parentNode.removeChild(loadingMsg);
+        });
+    </script>
+  </body>
+</html>
