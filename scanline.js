@@ -465,6 +465,17 @@ Surface.prototype.drawPolygon = function(vertices, uniform, vertexShader, fragme
         vertices[vertexIndex] = vertices[vertexIndex].unhomogenized();
     }
 
+    // Cull backfaces.
+    var sum = 0;
+    var i, j;
+    for(i = 0; i < vertices.length; i++){
+        j = (i+1) % vertices.length;
+        sum += (vertices[j].x - vertices[i].x) * (vertices[j].y + vertices[i].y);
+    }
+    if(sum < 0){
+        return;
+    }
+
     // Make a polygon out of the transformed vertices.
     var polygon = new Polygon(vertices, 0, this.height);
 
@@ -496,10 +507,10 @@ function drawTorus(surface, ringRadius, tubeRadius, ringVertCount, tubeVertCount
         var t;
         for(t = 0; t < tubeVertCount; t++){
             surface.drawPolygon([
-                makeVertex(r/ringVertCount, t/tubeVertCount),
-                makeVertex((r+1)/ringVertCount, t/tubeVertCount),
-                makeVertex((r+1)/ringVertCount, (t+1)/tubeVertCount),
                 makeVertex(r/ringVertCount, (t+1)/tubeVertCount),
+                makeVertex((r+1)/ringVertCount, (t+1)/tubeVertCount),
+                makeVertex((r+1)/ringVertCount, t/tubeVertCount),
+                makeVertex(r/ringVertCount, t/tubeVertCount),
                 ], uniform, vertexShader, fragmentShader);
         }
     }
