@@ -36,6 +36,8 @@
         }
         AsciiSurface.prototype = new Surface(document.getElementById('canvas'));
         AsciiSurface.prototype.drawPixel = function(x,y,r,g,b){
+            x = Math.round(x);
+            y = Math.round(y);
             if (this.buffer[y] == undefined){
                 this.buffer[y] = [];
             }
